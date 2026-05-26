@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+:root {
+  --green: #b8f53d;
+  --green-dim: #9dd132;
+}
+
+body {
+  background: #060606;
+  color: #eee;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
