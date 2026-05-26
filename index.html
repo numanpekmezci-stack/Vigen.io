@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Vigen.io - KI Short-Video Studio</title>
+    <meta
+      name="description"
+      content="Vigen.io verwandelt Ideen, YouTube-Links und Produktseiten in kurze Social Videos fuer TikTok, Reels und Shorts."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav" aria-label="Hauptnavigation">
+        <a class="brand" href="#top" aria-label="Vigen.io Startseite">
+          <span class="brand-mark">V</span>
+          <span>Vigen.io</span>
+        </a>
+        <div class="nav-links">
+          <a href="#produkt">Produkt</a>
+          <a href="#workflow">Workflow</a>
+          <a href="#preise">Preise</a>
+        </div>
+        <a class="button button-ghost" href="#studio">Demo starten</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero section">
+        <div class="hero-copy">
+          <p class="eyebrow">KI-Video-Plattform fuer Creator und Brands</p>
+          <h1>Aus Ideen und Links werden Shorts, Reels und TikToks.</h1>
+          <p class="hero-text">
+            Vigen.io ist ein erster MVP-Prototyp fuer eine webbasierte Software
+            wie Remakeit.io: Input rein, KI-Konzept raus, Social-ready Video
+            planen, exportieren und veroeffentlichen.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#studio">Video-Konzept erstellen</a>
+            <a class="button button-secondary" href="#workflow">Workflow ansehen</a>
+          </div>
+          <dl class="hero-stats" aria-label="Produktversprechen">
+            <div>
+              <dt>3</dt>
+              <dd>Input-Arten</dd>
+            </div>
+            <div>
+              <dt>9:16</dt>
+              <dd>Social Format</dd>
+            </div>
+            <div>
+              <dt>1</dt>
+              <dd>Klick bis zum Konzept</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="hero-card" aria-label="Beispiel eines generierten Videos">
+          <div class="phone-frame">
+            <div class="phone-top"></div>
+            <div class="video-preview">
+              <span class="badge">Auto-generated</span>
+              <h2>5 Fehler, die deine Ads teuer machen</h2>
+              <p>Hook: "Du verbrennst Budget, ohne es zu merken."</p>
+              <div class="caption-line"></div>
+              <div class="caption-line short"></div>
+            </div>
+          </div>
+          <div class="render-card">
+            <span>Render Queue</span>
+            <strong>UGC Ad - 27 Sekunden</strong>
+            <progress max="100" value="72">72%</progress>
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature-grid" id="produkt" aria-label="Produktfeatures">
+        <article class="feature-card">
+          <span class="icon">01</span>
+          <h2>Idee zu Video</h2>
+          <p>Beschreibe ein Thema und erhalte Hook, Skript, Szenenplan und CTA.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">02</span>
+          <h2>YouTube zu Shorts</h2>
+          <p>Plane spaeter automatische Analyse, Highlights, Captions und 9:16-Crops.</p>
+        </article>
+        <article class="feature-card">
+          <span class="icon">03</span>
+          <h2>Publishing-ready</h2>
+          <p>Hashtags, Titel, Plattform-Varianten und Scheduling werden vorbereitet.</p>
+        </article>
+      </section>
+
+      <section class="section studio-section" id="studio">
+        <div class="section-heading">
+          <p class="eyebrow">Interaktiver MVP</p>
+          <h2>Erstelle ein erstes Video-Briefing</h2>
+          <p>
+            Diese Demo simuliert den Kern-Workflow. Im naechsten Schritt kann
+            hier eine echte KI- und Video-Rendering-Pipeline angebunden werden.
+          </p>
+        </div>
+
+        <div class="studio">
+          <form class="brief-form" id="briefForm">
+            <label for="inputType">Input-Typ</label>
+            <select id="inputType" name="inputType">
+              <option value="idea">Idee oder Thema</option>
+              <option value="youtube">YouTube-Link</option>
+              <option value="product">Produktseite / URL</option>
+            </select>
+
+            <label for="brief">Briefing</label>
+            <textarea
+              id="brief"
+              name="brief"
+              rows="6"
+              placeholder="Beispiel: Erstelle ein virales Video fuer eine KI-Agentur, die E-Commerce Shops mehr Umsatz bringt."
+            ></textarea>
+
+            <label for="platform">Zielplattform</label>
+            <select id="platform" name="platform">
+              <option>TikTok</option>
+              <option>Instagram Reels</option>
+              <option>YouTube Shorts</option>
+            </select>
+
+            <button class="button button-primary" type="submit">
+              KI-Konzept generieren
+            </button>
+          </form>
+
+          <aside class="output-panel" aria-live="polite">
+            <div class="output-header">
+              <span class="badge">Preview</span>
+              <span id="platformLabel">TikTok</span>
+            </div>
+            <h3 id="outputTitle">Dein Short-Video Konzept</h3>
+            <ol id="scriptSteps">
+              <li>Hook mit starkem Problemversprechen</li>
+              <li>3 schnelle Value-Punkte mit visuellen Szenen</li>
+              <li>CTA: Speichern, testen oder Demo buchen</li>
+            </ol>
+            <div class="metadata">
+              <span>#shorts</span>
+              <span>#creator</span>
+              <span>#aivideo</span>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section workflow" id="workflow">
+        <div class="section-heading">
+          <p class="eyebrow">Vom MVP zum Produkt</p>
+          <h2>Der geplante Produktionsfluss</h2>
+        </div>
+        <div class="timeline">
+          <article>
+            <span>1</span>
+            <h3>Input analysieren</h3>
+            <p>Idee, URL oder Video wird in Skript, Zielgruppe und Hook zerlegt.</p>
+          </article>
+          <article>
+            <span>2</span>
+            <h3>Assets erzeugen</h3>
+            <p>Voiceover, Captions, B-Roll, Visuals und Musik werden vorgeschlagen.</p>
+          </article>
+          <article>
+            <span>3</span>
+            <h3>Video rendern</h3>
+            <p>FFmpeg/Rendering-Service erzeugt Varianten fuer Social-Formate.</p>
+          </article>
+          <article>
+            <span>4</span>
+            <h3>Planen und posten</h3>
+            <p>Exports, Kalender und Social-Integrationen bringen Content live.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section pricing" id="preise">
+        <div>
+          <p class="eyebrow">Launch-Angebot</p>
+          <h2>Starte mit einem fokussierten Creator-MVP</h2>
+          <p>
+            Empfohlen ist ein Credit-Modell: Nutzer kaufen Render-Credits fuer
+            generierte Videos, Voiceovers und Exporte.
+          </p>
+        </div>
+        <div class="price-card">
+          <span>Starter</span>
+          <strong>29 EUR / Monat</strong>
+          <ul>
+            <li>50 KI-Konzepte</li>
+            <li>20 Video-Renderings</li>
+            <li>3 Social-Profile</li>
+          </ul>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <span>Vigen.io</span>
+      <a href="#top">Nach oben</a>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
