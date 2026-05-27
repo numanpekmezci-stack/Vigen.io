@@ -1,11 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
-import { fal } from "@fal-ai/client";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const CREDIT_COST = 50;
-
-fal.config({ credentials: process.env.FAL_KEY! });
+const FAL_KEY = process.env.FAL_KEY!;
 
 const TEXT_TO_VIDEO: Record<string, string> = {
   veo3: "fal-ai/kling-video/v2/master/text-to-video",
@@ -42,24 +40,19 @@ export async function POST(request: Request) {
 
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      return NextResponse.json({ error: "Not logged in. Please log in and try again." }, { status: 401 });
+      return NextResponse.json({ error: "Not logged in." }, { status: 401 });
     }
 
     const { prompt, model, aspect_ratio, image_url } = await request.json();
-
     if (!prompt?.trim()) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
-
     if (model === "motion" && !image_url) {
-      return NextResponse.json({ error: "Motion Control requires a reference image. Please upload one." }, { status: 400 });
+      return NextResponse.json({ error: "Motion Control requires a reference image." }, { status: 400 });
     }
 
     let { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", user.id)
-      .single();
+      .from("profiles").select("credits").eq("id", user.id).single();
 
     if (profileError || !profile) {
       await supabase.from("profiles").insert({ id: user.id, credits: 500 });
@@ -71,8 +64,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Not enough credits. Need ${CREDIT_COST}, have ${currentCredits}.` }, { status: 402 });
     }
 
-    const useImageToVideo = !!image_url;
-    const endpointId = useImageToVideo
+    const useImage = !!image_url;
+    const endpointId = useImage
       ? (IMAGE_TO_VIDEO[model] || IMAGE_TO_VIDEO.kling)
       : (TEXT_TO_VIDEO[model] || TEXT_TO_VIDEO.kling);
 
@@ -81,42 +74,37 @@ export async function POST(request: Request) {
       duration: "5",
       aspect_ratio: aspect_ratio || "9:16",
     };
+    if (useImage) input.start_image_url = image_url;
 
-    if (useImageToVideo) {
-      input.start_image_url = image_url;
-    }
-
-    let result;
-    try {
-      result = await fal.subscribe(endpointId, { input });
-    } catch (falErr) {
-      const msg = falErr instanceof Error ? falErr.message : String(falErr);
-      if (msg.includes("balance") || msg.includes("locked")) {
-        return NextResponse.json({ error: "AI service balance exhausted. Please top up at fal.ai." }, { status: 503 });
-      }
-      return NextResponse.json({ error: `AI generation failed: ${msg}` }, { status: 502 });
-    }
-
-    const videoUrl = (result.data as { video?: { url?: string } })?.video?.url;
-    if (!videoUrl) {
-      return NextResponse.json({ error: "No video returned. Please try again." }, { status: 500 });
-    }
-
-    const newCredits = currentCredits - CREDIT_COST;
-    await supabase.from("profiles").update({ credits: newCredits }).eq("id", user.id);
-
-    await supabase.from("videos").insert({
-      user_id: user.id,
-      prompt,
-      model: model || "kling",
-      aspect_ratio: aspect_ratio || "9:16",
-      video_url: videoUrl,
+    // Submit to queue (non-blocking)
+    const queueRes = await fetch(`https://queue.fal.run/${endpointId}`, {
+      method: "POST",
+      headers: {
+        "Authorization": `Key ${FAL_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(input),
     });
 
-    return NextResponse.json({ video_url: videoUrl, credits_remaining: newCredits });
+    const queueData = await queueRes.json();
+
+    if (!queueRes.ok) {
+      const msg = queueData?.detail || queueData?.message || "Failed to start generation";
+      if (msg.includes("balance") || msg.includes("locked")) {
+        return NextResponse.json({ error: "AI service balance exhausted. Top up at fal.ai." }, { status: 503 });
+      }
+      return NextResponse.json({ error: msg }, { status: 502 });
+    }
+
+    return NextResponse.json({
+      request_id: queueData.request_id,
+      status_url: queueData.status_url,
+      response_url: queueData.response_url,
+      user_id: user.id,
+      credits: currentCredits,
+    });
   } catch (err) {
     console.error("Generate error:", err);
-    const message = err instanceof Error ? err.message : "Generation failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Generation failed" }, { status: 500 });
   }
 }

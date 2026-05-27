@@ -82,6 +82,44 @@ export default function GeneratePage() {
   function removeImage() { setImageUrl(null); setImagePreview(null); if (fileRef.current) fileRef.current.value = ""; }
   function removeVideo() { setVideoRefUrl(null); setVideoRefName(null); if (videoRef.current) videoRef.current.value = ""; }
 
+  async function pollForResult(responseUrl: string, userId: string) {
+    const maxAttempts = 60;
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise((r) => setTimeout(r, 5000));
+
+      try {
+        const res = await fetch("/api/generate/status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            response_url: responseUrl,
+            user_id: userId,
+            prompt,
+            model: selectedModel,
+            aspect_ratio: ratio,
+          }),
+        });
+        const data = await res.json();
+
+        if (data.status === "COMPLETED") {
+          setVideoUrl(data.video_url);
+          if (data.credits_remaining !== undefined) setCredits(data.credits_remaining);
+          setState("done");
+          return;
+        }
+        if (data.status === "FAILED") {
+          setError(data.error || "Generation failed");
+          setState("error");
+          return;
+        }
+      } catch {
+        // Network hiccup, keep polling
+      }
+    }
+    setError("Generation timed out. Please try again.");
+    setState("error");
+  }
+
   async function handleGenerate() {
     if (!prompt.trim() || state === "generating") return;
     if (isMotion && !imageUrl) { setError("Motion Control requires a reference image."); return; }
@@ -98,11 +136,10 @@ export default function GeneratePage() {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Generation failed"); setState("error"); return; }
-      setVideoUrl(data.video_url);
-      if (data.credits_remaining !== undefined) setCredits(data.credits_remaining);
-      setState("done");
+
+      pollForResult(data.response_url, data.user_id);
     } catch {
-      setError("Network error. Please try again.");
+      setError("Failed to start generation. Please try again.");
       setState("error");
     }
   }
