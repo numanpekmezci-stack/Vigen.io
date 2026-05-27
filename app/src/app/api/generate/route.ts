@@ -81,13 +81,25 @@ export async function POST(request: Request) {
     // Call fal.ai
     const endpointId = MODEL_MAP[model] || MODEL_MAP.kling;
 
-    const result = await fal.subscribe(endpointId, {
-      input: {
-        prompt,
-        duration: "5",
-        aspect_ratio: aspect_ratio || "9:16",
-      },
-    });
+    let result;
+    try {
+      result = await fal.subscribe(endpointId, {
+        input: {
+          prompt,
+          duration: "5",
+          aspect_ratio: aspect_ratio || "9:16",
+        },
+      });
+    } catch (falErr) {
+      const msg = falErr instanceof Error ? falErr.message : String(falErr);
+      if (msg.includes("balance") || msg.includes("locked")) {
+        return NextResponse.json(
+          { error: "AI service balance exhausted. Please contact support." },
+          { status: 503 }
+        );
+      }
+      return NextResponse.json({ error: `AI generation failed: ${msg}` }, { status: 502 });
+    }
 
     const videoUrl = (result.data as { video?: { url?: string } })?.video?.url;
 
