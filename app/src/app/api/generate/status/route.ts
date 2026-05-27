@@ -26,10 +26,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "FAILED", error: data.detail });
     }
 
-    // Got result
+    // Got result — could be video or image
     const videoUrl = data?.video?.url;
-    if (!videoUrl) {
-      return NextResponse.json({ status: "FAILED", error: "No video in response" });
+    const imageUrl = data?.images?.[0]?.url;
+    const resultUrl = videoUrl || imageUrl;
+    const outputType = videoUrl ? "video" : "image";
+
+    if (!resultUrl) {
+      return NextResponse.json({ status: "FAILED", error: "No output in response" });
     }
 
     // Deduct credits + save video
@@ -60,12 +64,13 @@ export async function POST(request: Request) {
       prompt: prompt || "",
       model: model || "kling",
       aspect_ratio: aspect_ratio || "9:16",
-      video_url: videoUrl,
+      video_url: resultUrl,
     });
 
     return NextResponse.json({
       status: "COMPLETED",
-      video_url: videoUrl,
+      video_url: resultUrl,
+      output_type: outputType,
       credits_remaining: newCredits,
     });
   } catch (err) {

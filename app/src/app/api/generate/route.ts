@@ -10,7 +10,6 @@ const TEXT_TO_VIDEO: Record<string, string> = {
   sora2: "fal-ai/kling-video/v2/master/text-to-video",
   kling: "fal-ai/kling-video/v2/master/text-to-video",
   wan: "fal-ai/kling-video/v2/master/text-to-video",
-  nano: "fal-ai/kling-video/v2/master/text-to-video",
 };
 
 const IMAGE_TO_VIDEO: Record<string, string> = {
@@ -18,9 +17,10 @@ const IMAGE_TO_VIDEO: Record<string, string> = {
   sora2: "fal-ai/kling-video/v2/master/image-to-video",
   kling: "fal-ai/kling-video/v2/master/image-to-video",
   wan: "fal-ai/kling-video/v2/master/image-to-video",
-  nano: "fal-ai/kling-video/v2/master/image-to-video",
   motion: "fal-ai/kling-video/v2/master/image-to-video",
 };
+
+const IMAGE_GEN = "fal-ai/nano-banana-pro";
 
 export async function POST(request: Request) {
   try {
@@ -64,17 +64,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Not enough credits. Need ${CREDIT_COST}, have ${currentCredits}.` }, { status: 402 });
     }
 
+    const isNano = model === "nano";
     const useImage = !!image_url;
-    const endpointId = useImage
-      ? (IMAGE_TO_VIDEO[model] || IMAGE_TO_VIDEO.kling)
-      : (TEXT_TO_VIDEO[model] || TEXT_TO_VIDEO.kling);
 
-    const input: Record<string, unknown> = {
-      prompt,
-      duration: "5",
-      aspect_ratio: aspect_ratio || "9:16",
-    };
-    if (useImage) input.start_image_url = image_url;
+    let endpointId: string;
+    const input: Record<string, unknown> = { prompt };
+
+    if (isNano) {
+      endpointId = IMAGE_GEN;
+      input.num_images = 1;
+      input.resolution = "1K";
+    } else {
+      endpointId = useImage
+        ? (IMAGE_TO_VIDEO[model] || IMAGE_TO_VIDEO.kling)
+        : (TEXT_TO_VIDEO[model] || TEXT_TO_VIDEO.kling);
+      input.duration = "5";
+      input.aspect_ratio = aspect_ratio || "9:16";
+      if (useImage) input.start_image_url = image_url;
+    }
 
     // Submit to queue (non-blocking)
     const queueRes = await fetch(`https://queue.fal.run/${endpointId}`, {
@@ -102,6 +109,7 @@ export async function POST(request: Request) {
       response_url: queueData.response_url,
       user_id: user.id,
       credits: currentCredits,
+      output_type: isNano ? "image" : "video",
     });
   } catch (err) {
     console.error("Generate error:", err);

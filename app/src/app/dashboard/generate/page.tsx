@@ -9,7 +9,7 @@ const models = [
   { id: "motion", name: "Motion Control", desc: "Create AI videos fast with just one prompt", img: "/models/motion.jpg", type: "motion" },
   { id: "kling", name: "Kling Video", desc: "Image-to-video with start/end frames", img: "/models/kling.jpg", type: "text" },
   { id: "wan", name: "WAN", desc: "Fast stylized video generation", img: "/models/wan.jpg", type: "text" },
-  { id: "nano", name: "Nano Banana", desc: "AI generation with reference images", img: "/models/nano.jpg", type: "text" },
+  { id: "nano", name: "Nano Banana", desc: "AI image generation (Google)", img: "/models/nano.jpg", type: "image" },
 ];
 
 type GenState = "idle" | "generating" | "done" | "error";
@@ -20,6 +20,7 @@ export default function GeneratePage() {
   const [ratio, setRatio] = useState("9:16");
   const [state, setState] = useState<GenState>("idle");
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [outputType, setOutputType] = useState<"video" | "image">("video");
   const [credits, setCredits] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -103,6 +104,7 @@ export default function GeneratePage() {
 
         if (data.status === "COMPLETED") {
           setVideoUrl(data.video_url);
+          setOutputType(data.output_type || "video");
           if (data.credits_remaining !== undefined) setCredits(data.credits_remaining);
           setState("done");
           return;
@@ -181,8 +183,12 @@ export default function GeneratePage() {
         )}
         {videoUrl && state === "done" && (
           <div className="flex justify-center mb-4">
-            <div className="w-[240px] rounded-2xl overflow-hidden border border-[#1a1a1d]">
-              <video src={videoUrl} controls autoPlay loop className="w-full aspect-[9/16] object-contain bg-black" />
+            <div className="w-[280px] rounded-2xl overflow-hidden border border-[#1a1a1d]">
+              {outputType === "image" ? (
+                <img src={videoUrl} alt="Generated" className="w-full object-contain bg-black" />
+              ) : (
+                <video src={videoUrl} controls autoPlay loop className="w-full aspect-[9/16] object-contain bg-black" />
+              )}
             </div>
           </div>
         )}
