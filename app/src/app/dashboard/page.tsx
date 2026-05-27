@@ -1,74 +1,83 @@
 import Link from "next/link";
 
+const tools = [
+  {
+    href: "/dashboard/clipping",
+    title: "Turn YouTube Links into Viral Clips",
+    label: "Clipping",
+    desc: "Paste a YouTube URL, AI cuts the best moments, adds subtitles, optimized for TikTok/Reels/Shorts.",
+    gradient: "from-[#111] to-[#0a0a0c]",
+  },
+  {
+    href: "/dashboard/generate",
+    title: "Generate viral AI videos",
+    label: "AI Generation",
+    desc: "Create any video with VEO3, SORA2, Kling Video, WAN, Nano Banana and more. Just describe it.",
+    gradient: "from-[#0f0f18] to-[#0a0a0c]",
+  },
+];
+
+const extraTools = [
+  {
+    href: "/dashboard/templates",
+    icon: "🎬",
+    title: "Templates",
+    desc: "50+ brainrot character templates ready to use",
+  },
+  {
+    href: "/dashboard/subtitles",
+    icon: "💬",
+    title: "Auto Subtitles",
+    desc: "Add animated captions to any video automatically",
+  },
+  {
+    href: "/dashboard/publish",
+    icon: "📱",
+    title: "Auto Publishing",
+    desc: "Schedule & post to TikTok, Reels and Shorts in one click",
+  },
+  {
+    href: "/dashboard/videos",
+    icon: "📁",
+    title: "My Videos",
+    desc: "View and manage all your generated content",
+  },
+];
+
 export default function DashboardPage() {
   return (
-    <div className="max-w-[1200px] mx-auto px-6 py-8">
-      <p className="text-[#555] text-sm mb-8">Welcome back</p>
+    <div className="max-w-[1200px] mx-auto px-6 py-6">
+      <p className="text-[#555] text-xs mb-5">Welcome back</p>
 
-      <div className="grid grid-cols-2 gap-5">
-        {/* Templates Card */}
-        <Link href="/dashboard/templates" className="group">
-          <div className="relative rounded-2xl overflow-hidden bg-[#0c0c0c] border border-[#1a1a1a] hover:border-[#333] transition h-[380px] flex flex-col">
-            <div className="flex-1 p-8 flex flex-col justify-center items-center">
-              <h3 className="text-xl font-bold text-center mb-4">
-                Pick a Brainrot Template &<br />Go Viral Instantly
-              </h3>
-              <div className="flex gap-3 mb-6">
-                <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] grid place-items-center text-2xl">🪵</div>
-                <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] grid place-items-center text-2xl">🦈</div>
-                <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] grid place-items-center text-2xl">🐊</div>
-                <div className="w-16 h-16 rounded-xl bg-[#1a1a1a] grid place-items-center text-2xl">🍓</div>
+      {/* Two main feature cards */}
+      <div className="grid grid-cols-2 gap-4 mb-6">
+        {tools.map((t) => (
+          <Link key={t.href} href={t.href} className="group">
+            <div className={`rounded-2xl border border-[#1a1a1d] bg-gradient-to-br ${t.gradient} p-6 h-[280px] flex flex-col justify-between hover:border-[#333] transition`}>
+              <div>
+                <h3 className="text-base font-bold mb-2 leading-snug">{t.title}</h3>
+                <p className="text-xs text-[#555] leading-relaxed max-w-[280px]">{t.desc}</p>
               </div>
-              <div className="flex gap-2 text-xs text-[#555]">
-                <span className="px-2.5 py-1 rounded-full bg-[#111] border border-[#1a1a1a]">Tung Tung Sahur</span>
-                <span className="px-2.5 py-1 rounded-full bg-[#111] border border-[#1a1a1a]">Bombardiro</span>
-                <span className="px-2.5 py-1 rounded-full bg-[#111] border border-[#1a1a1a]">+50 more</span>
-              </div>
-              <div className="flex gap-2 mt-6">
-                <div className="w-20 h-36 rounded-xl bg-[#111] border border-[#1a1a1a]"></div>
-                <div className="w-20 h-36 rounded-xl bg-[#111] border border-[#1a1a1a]"></div>
-                <div className="w-20 h-36 rounded-xl bg-[#111] border border-[#1a1a1a]"></div>
+              <div>
+                <span className="text-2xl font-bold italic text-[#b8f53d]">{t.label}</span>
               </div>
             </div>
-            <div className="p-6 pt-0 text-center">
-              <h2 className="text-3xl font-bold italic text-[#b8f53d]">Templates</h2>
-            </div>
-          </div>
-        </Link>
+          </Link>
+        ))}
+      </div>
 
-        {/* AI Generation Card */}
-        <Link href="/dashboard/generate" className="group">
-          <div className="relative rounded-2xl overflow-hidden border border-[#1a1a1a] hover:border-[#333] transition h-[380px] flex flex-col">
-            {/* Background thumbnails */}
-            <div className="absolute inset-0 grid grid-cols-3 gap-1 opacity-30">
-              <div className="bg-gradient-to-br from-[#1a2a4a] to-[#0a1a2a]"></div>
-              <div className="bg-gradient-to-br from-[#2a1a3a] to-[#1a0a2a]"></div>
-              <div className="bg-gradient-to-br from-[#1a3a2a] to-[#0a2a1a]"></div>
-              <div className="bg-gradient-to-br from-[#3a2a1a] to-[#2a1a0a]"></div>
-              <div className="bg-gradient-to-br from-[#1a1a3a] to-[#0a0a2a]"></div>
-              <div className="bg-gradient-to-br from-[#2a3a1a] to-[#1a2a0a]"></div>
+      {/* Extra tools grid */}
+      <p className="text-xs text-[#555] mb-3 font-medium">Tools</p>
+      <div className="grid grid-cols-4 gap-3">
+        {extraTools.map((t) => (
+          <Link key={t.href} href={t.href} className="group">
+            <div className="rounded-xl border border-[#1a1a1d] bg-[#0c0c0e] p-4 hover:border-[#333] transition h-full">
+              <span className="text-xl mb-3 block">{t.icon}</span>
+              <h3 className="text-sm font-semibold mb-1">{t.title}</h3>
+              <p className="text-[0.65rem] text-[#555] leading-relaxed">{t.desc}</p>
             </div>
-            <div className="absolute inset-0 bg-gradient-to-t from-[#060606] via-[#060606]/80 to-transparent"></div>
-
-            <div className="relative flex-1 p-8 flex flex-col justify-end">
-              {/* Prompt mockup */}
-              <div className="bg-[#0c0c0c]/90 backdrop-blur border border-[#242424] rounded-xl p-4 mb-4">
-                <p className="text-sm text-[#555] mb-3">Describe the video you want to create...</p>
-                <div className="flex items-center gap-2">
-                  <span className="px-3 py-1 rounded-lg text-xs font-medium bg-[#b8f53d]/10 text-[#b8f53d] border border-[#b8f53d]/20">✦ VEO3</span>
-                  <span className="px-3 py-1 rounded-lg text-xs text-[#555] border border-[#1a1a1a]">16:9</span>
-                  <span className="px-3 py-1 rounded-lg text-xs text-[#555] border border-[#1a1a1a]">9:16</span>
-                </div>
-              </div>
-              <div className="bg-[#b8f53d] text-black font-bold text-sm py-3 rounded-xl text-center">
-                Generate ✦
-              </div>
-            </div>
-            <div className="relative p-6 pt-0 text-center">
-              <h2 className="text-3xl font-bold italic text-[#b8f53d]">AI Generation</h2>
-            </div>
-          </div>
-        </Link>
+          </Link>
+        ))}
       </div>
     </div>
   );
