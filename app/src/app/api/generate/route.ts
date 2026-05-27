@@ -30,11 +30,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    const { data: profile } = await supabase
+    let { data: profile } = await supabase
       .from("profiles")
       .select("credits")
       .eq("id", user.id)
       .single();
+
+    if (!profile) {
+      await supabase.from("profiles").insert({ id: user.id, credits: 500 });
+      profile = { credits: 500 };
+    }
 
     const currentCredits = profile?.credits ?? 0;
 
