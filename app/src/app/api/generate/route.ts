@@ -1,5 +1,6 @@
-import { createClient } from "@/lib/supabase-server";
+import { createServerClient } from "@supabase/ssr";
 import { fal } from "@fal-ai/client";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const CREDIT_COST = 50;
@@ -17,11 +18,31 @@ const MODEL_MAP: Record<string, string> = {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll(); },
+          setAll(cookiesToSet) {
+            try {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                cookieStore.set(name, value, options)
+              );
+            } catch { /* ignore in API route */ }
+          },
+        },
+      }
+    );
 
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: "Not logged in. Please log in and try again." },
+        { status: 401 }
+      );
     }
 
     const { prompt, model, aspect_ratio } = await request.json();
@@ -30,26 +51,34 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
-    let { data: profile } = await supabase
+    // Get or create profile
+    let { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("credits")
       .eq("id", user.id)
       .single();
 
-    if (!profile) {
-      await supabase.from("profiles").insert({ id: user.id, credits: 500 });
+    if (profileError || !profile) {
+      const { error: insertErr } = await supabase
+        .from("profiles")
+        .insert({ id: user.id, credits: 500 });
+
+      if (insertErr) {
+        console.error("Profile insert error:", insertErr);
+      }
       profile = { credits: 500 };
     }
 
-    const currentCredits = profile?.credits ?? 0;
+    const currentCredits = profile.credits ?? 0;
 
     if (currentCredits < CREDIT_COST) {
       return NextResponse.json(
-        { error: `Not enough credits. You need ${CREDIT_COST}, you have ${currentCredits}.` },
+        { error: `Not enough credits. Need ${CREDIT_COST}, have ${currentCredits}.` },
         { status: 402 }
       );
     }
 
+    // Call fal.ai
     const endpointId = MODEL_MAP[model] || MODEL_MAP.kling;
 
     const result = await fal.subscribe(endpointId, {
@@ -63,14 +92,20 @@ export async function POST(request: Request) {
     const videoUrl = (result.data as { video?: { url?: string } })?.video?.url;
 
     if (!videoUrl) {
-      return NextResponse.json({ error: "No video returned from AI model" }, { status: 500 });
+      return NextResponse.json(
+        { error: "No video returned from AI. Please try again." },
+        { status: 500 }
+      );
     }
 
+    // Deduct credits
     const newCredits = currentCredits - CREDIT_COST;
     await supabase
       .from("profiles")
-      .upsert({ id: user.id, credits: newCredits }, { onConflict: "id" });
+      .update({ credits: newCredits })
+      .eq("id", user.id);
 
+    // Save video
     await supabase.from("videos").insert({
       user_id: user.id,
       prompt,
@@ -84,6 +119,7 @@ export async function POST(request: Request) {
       credits_remaining: newCredits,
     });
   } catch (err) {
+    console.error("Generate error:", err);
     const message = err instanceof Error ? err.message : "Generation failed";
     return NextResponse.json({ error: message }, { status: 500 });
   }
