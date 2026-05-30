@@ -55,10 +55,16 @@ export default function VideosPage() {
               )}
               <div className="p-3">
                 <p className="text-xs truncate mb-1">{v.prompt || "No prompt"}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-[0.6rem] text-[#555]">{v.model} · {v.aspect_ratio}</span>
-                  <a href={v.video_url} download target="_blank" className="text-[0.6rem] text-[#b8f53d] hover:underline">Download</a>
-                </div>
+                <span className="text-[0.6rem] text-[#555] block mb-2">{v.model} · {v.aspect_ratio}</span>
+                <a
+                  href={v.video_url}
+                  download={`vigen_${v.model}_${v.id}.${v.video_url.match(/\.(jpg|jpeg|png|webp)/) ? "png" : "mp4"}`}
+                  target="_blank"
+                  className="w-full flex items-center justify-center gap-1.5 py-2 bg-[#c8f135] text-[#080809] text-[0.65rem] font-bold rounded-lg hover:bg-[#b5dd2e] transition"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Download
+                </a>
               </div>
             </div>
           ))}
