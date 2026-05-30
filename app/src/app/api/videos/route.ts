@@ -19,21 +19,17 @@ export async function GET() {
     );
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return NextResponse.json({ credits: 0 }, { status: 401 });
+    if (!user) return NextResponse.json({ videos: [] }, { status: 401 });
 
-    let { data: profile } = await supabase
-      .from("profiles")
-      .select("credits")
-      .eq("id", user.id)
-      .single();
+    const { data: videos } = await supabase
+      .from("videos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    if (!profile) {
-      await supabase.from("profiles").insert({ id: user.id, credits: 500 });
-      profile = { credits: 500 };
-    }
-
-    return NextResponse.json({ credits: profile.credits ?? 0 });
+    return NextResponse.json({ videos: videos || [] });
   } catch {
-    return NextResponse.json({ credits: 0 });
+    return NextResponse.json({ videos: [] });
   }
 }

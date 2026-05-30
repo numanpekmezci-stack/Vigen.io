@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
 const CREDIT_COST = 50;
-const FAL_KEY = process.env.FAL_KEY!;
+const FAL_KEY = process.env.FAL_KEY || "";
 
 const TEXT_TO_VIDEO: Record<string, string> = {
   veo3: "fal-ai/kling-video/v2/master/text-to-video",
@@ -41,6 +41,10 @@ export async function POST(request: Request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json({ error: "Not logged in." }, { status: 401 });
+    }
+
+    if (!FAL_KEY) {
+      return NextResponse.json({ error: "AI service not configured. Set FAL_KEY." }, { status: 503 });
     }
 
     const { prompt, model, aspect_ratio, image_url } = await request.json();

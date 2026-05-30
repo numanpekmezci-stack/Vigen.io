@@ -24,8 +24,10 @@ export async function POST(request: Request) {
   const file = formData.get("file") as File;
   if (!file) return NextResponse.json({ error: "No file" }, { status: 400 });
 
-  if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json({ error: "File too large (max 5MB)" }, { status: 400 });
+  const isVideo = file.type.startsWith("video/");
+  const maxSize = isVideo ? 100 * 1024 * 1024 : 5 * 1024 * 1024;
+  if (file.size > maxSize) {
+    return NextResponse.json({ error: `File too large (max ${isVideo ? "100MB" : "5MB"})` }, { status: 400 });
   }
 
   const ext = file.name.split(".").pop() || "jpg";
