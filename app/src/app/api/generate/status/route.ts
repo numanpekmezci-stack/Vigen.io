@@ -38,24 +38,30 @@ export async function POST(request: Request) {
       headers: { "Authorization": `Key ${FAL_KEY}` },
     });
 
-    if (!res.ok) {
-      const text = await res.text().catch(() => "");
-      if (text.includes("balance") || text.includes("locked")) {
-        return NextResponse.json({ status: "FAILED", error: "AI service balance exhausted. Top up at fal.ai." });
-      }
-      if (res.status === 422 || res.status === 400) {
-        return NextResponse.json({ status: "FAILED", error: "Generation failed. Try a different prompt." });
-      }
-      return NextResponse.json({ status: "IN_QUEUE" });
-    }
-
     let data;
     try { data = await res.json(); } catch {
       return NextResponse.json({ status: "IN_QUEUE" });
     }
 
+    // fal returns 400 with "still in progress" while processing — treat as IN_QUEUE
+    if (data.detail?.includes("still in progress") || data.detail?.includes("in queue")) {
+      return NextResponse.json({ status: "IN_PROGRESS" });
+    }
+
     if (data.status === "IN_QUEUE" || data.status === "IN_PROGRESS") {
       return NextResponse.json({ status: data.status, queue_position: data.queue_position });
+    }
+
+    // Actual errors
+    if (!res.ok) {
+      const msg = data.detail || "";
+      if (msg.includes("balance") || msg.includes("locked")) {
+        return NextResponse.json({ status: "FAILED", error: "AI service balance exhausted. Top up at fal.ai." });
+      }
+      if (msg.includes("not found")) {
+        return NextResponse.json({ status: "FAILED", error: "Generation job expired. Please try again." });
+      }
+      return NextResponse.json({ status: "FAILED", error: msg || "Generation failed" });
     }
 
     if (data.detail) {
