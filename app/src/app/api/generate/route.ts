@@ -74,7 +74,7 @@ export async function POST(request: Request) {
     }
 
     const { prompt, model, aspect_ratio, image_url, video_url, character_orientation } = await request.json();
-    if (!prompt?.trim()) {
+    if (!prompt?.trim() && model !== "motion") {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
@@ -86,6 +86,9 @@ export async function POST(request: Request) {
     // Motion Control needs image_url + video_url
     if (model === "motion" && !image_url) {
       return NextResponse.json({ error: "Motion Control requires a reference image." }, { status: 400 });
+    }
+    if (model === "motion" && !video_url) {
+      return NextResponse.json({ error: "Motion Control requires a reference video for the movement." }, { status: 400 });
     }
 
     // Credits check
@@ -107,11 +110,12 @@ export async function POST(request: Request) {
     const input: Record<string, unknown> = { prompt };
 
     if (model === "motion") {
-      // Motion Control: image + video + orientation
+      // Motion Control: requires image_url + video_url + character_orientation
       endpointId = modelConfig.motion!;
       input.image_url = image_url;
-      if (video_url) input.video_url = video_url;
+      input.video_url = video_url;
       input.character_orientation = character_orientation || "video";
+      delete input.prompt; // Motion Control doesn't use prompt
     } else if (model === "nano") {
       if (image_url) {
         // Nano Banana EDIT mode: uses reference image

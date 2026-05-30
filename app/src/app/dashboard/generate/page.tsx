@@ -146,6 +146,7 @@ export default function GeneratePage() {
   async function handleGenerate() {
     if (!prompt.trim() || state === "generating") return;
     if (isMotion && !imageUrl) { setError("Motion Control requires a reference image."); return; }
+    if (isMotion && !videoRefUrl) { setError("Motion Control requires a reference video for the movement."); return; }
 
     setState("generating");
     setError("");
@@ -423,7 +424,7 @@ export default function GeneratePage() {
 
           <button
             onClick={handleGenerate}
-            disabled={!prompt.trim() || state === "generating" || (isMotion && !imageUrl)}
+            disabled={(!isMotion && !prompt.trim()) || state === "generating" || (isMotion && (!imageUrl || !videoRefUrl))}
             className="px-10 py-3 rounded-full font-bold text-sm transition disabled:opacity-20 disabled:cursor-not-allowed bg-[#b8f53d] text-black hover:bg-[#a5dd30]"
           >
             {state === "generating" ? "Generating..." : imageUrl && !isMotion ? `Generate with reference ✦` : "Generate ✦"}
