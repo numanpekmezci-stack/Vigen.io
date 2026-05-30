@@ -38,6 +38,7 @@ const MODELS: Record<string, {
   },
   nano: {
     text: "fal-ai/nano-banana-pro",
+    image: "fal-ai/nano-banana-pro/edit",
     type: "image",
   },
   motion: {
@@ -112,10 +113,16 @@ export async function POST(request: Request) {
       if (video_url) input.video_url = video_url;
       input.character_orientation = character_orientation || "video";
     } else if (model === "nano") {
-      // Nano Banana: image generation
-      endpointId = modelConfig.text;
-      input.num_images = 1;
-      input.resolution = "1K";
+      if (image_url) {
+        // Nano Banana EDIT mode: uses reference image
+        endpointId = "fal-ai/nano-banana-pro/edit";
+        input.image_urls = [image_url];
+      } else {
+        // Nano Banana: text-to-image
+        endpointId = modelConfig.text;
+        input.num_images = 1;
+        input.resolution = "1K";
+      }
     } else if (image_url) {
       // Image-to-video for other models
       endpointId = modelConfig.image || modelConfig.text;

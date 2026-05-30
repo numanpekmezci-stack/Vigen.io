@@ -69,9 +69,11 @@ export async function POST(request: Request) {
     }
 
     const videoUrl = data?.video?.url;
-    const imageUrl = data?.images?.[0]?.url;
+    const imageUrl = data?.images?.[0]?.url || data?.image?.url;
     const resultUrl = videoUrl || imageUrl;
     const outputType = videoUrl ? "video" : "image";
+    
+    console.log("[status] Result keys:", Object.keys(data), "videoUrl:", videoUrl, "imageUrl:", imageUrl);
 
     if (!resultUrl) {
       return NextResponse.json({ status: "FAILED", error: "No output in response" });
