@@ -152,7 +152,11 @@ export async function POST(request: Request) {
     console.log(`[generate] fal response (${queueRes.status}):`, JSON.stringify(queueData).slice(0, 200));
 
     if (!queueRes.ok) {
-      const msg = queueData?.detail || queueData?.message || "Failed to start generation";
+      let msg = queueData?.detail || queueData?.message || "";
+      if (typeof msg !== "string") {
+        msg = Array.isArray(msg) ? msg.map((e: { msg?: string }) => e?.msg || JSON.stringify(e)).join(", ") : JSON.stringify(msg);
+      }
+      if (!msg) msg = "Failed to start generation";
       if (msg.includes("balance") || msg.includes("locked")) {
         return NextResponse.json({ error: "AI service balance exhausted. Top up at fal.ai." }, { status: 503 });
       }

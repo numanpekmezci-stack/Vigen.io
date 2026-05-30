@@ -23,6 +23,17 @@ export default function GeneratePage() {
   const [outputType, setOutputType] = useState<"video" | "image">("video");
   const [credits, setCredits] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  function safeError(err: unknown): string {
+    if (!err) return "Something went wrong";
+    if (typeof err === "string") return err;
+    if (Array.isArray(err)) return err.map(e => e?.msg || e?.message || JSON.stringify(e)).join(", ");
+    if (typeof err === "object" && err !== null) {
+      const e = err as Record<string, unknown>;
+      return (e.msg || e.message || e.detail || JSON.stringify(err)) as string;
+    }
+    return String(err);
+  }
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -70,7 +81,7 @@ export default function GeneratePage() {
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Upload failed");
+        setError(safeError(data.error) || "Upload failed");
         setUploadStatus("");
         if (type === "image") { setImagePreview(null); setImageUrl(null); }
         else setVideoRefName(null);
@@ -120,7 +131,7 @@ export default function GeneratePage() {
           return;
         }
         if (data.status === "FAILED") {
-          setError(data.error || "Generation failed");
+          setError(safeError(data.error) || "Generation failed");
           setState("error");
           return;
         }
@@ -154,7 +165,7 @@ export default function GeneratePage() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error || "Generation failed"); setState("error"); return; }
+      if (!res.ok) { setError(safeError(data.error) || "Generation failed"); setState("error"); return; }
 
       pollForResult(data.response_url, data.user_id);
     } catch {
