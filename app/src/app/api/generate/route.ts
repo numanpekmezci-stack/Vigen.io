@@ -5,25 +5,54 @@ import { NextResponse } from "next/server";
 const CREDIT_COST = 50;
 const FAL_KEY = process.env.FAL_KEY || "";
 
-const TEXT_TO_VIDEO: Record<string, string> = {
-  veo3: "fal-ai/kling-video/v2/master/text-to-video",
-  sora2: "fal-ai/kling-video/v2/master/text-to-video",
-  kling: "fal-ai/kling-video/v2/master/text-to-video",
-  wan: "fal-ai/kling-video/v2/master/text-to-video",
+const MODELS: Record<string, {
+  text: string;
+  image?: string;
+  motion?: string;
+  type: "video" | "image";
+  inputKey?: string;
+}> = {
+  veo3: {
+    text: "fal-ai/veo3",
+    image: "fal-ai/veo3.1/image-to-video",
+    type: "video",
+    inputKey: "image_url",
+  },
+  sora2: {
+    text: "fal-ai/sora-2/text-to-video",
+    image: "fal-ai/sora-2/image-to-video",
+    type: "video",
+    inputKey: "image_url",
+  },
+  kling: {
+    text: "fal-ai/kling-video/v2/master/text-to-video",
+    image: "fal-ai/kling-video/v2/master/image-to-video",
+    type: "video",
+    inputKey: "start_image_url",
+  },
+  wan: {
+    text: "fal-ai/wan/v2.7/text-to-video",
+    image: "fal-ai/wan/v2.7/image-to-video",
+    type: "video",
+    inputKey: "image_url",
+  },
+  nano: {
+    text: "fal-ai/nano-banana-pro",
+    type: "image",
+  },
+  motion: {
+    text: "fal-ai/kling-video/v3/pro/motion-control",
+    motion: "fal-ai/kling-video/v3/pro/motion-control",
+    type: "video",
+  },
 };
-
-const IMAGE_TO_VIDEO: Record<string, string> = {
-  veo3: "fal-ai/kling-video/v2/master/image-to-video",
-  sora2: "fal-ai/kling-video/v2/master/image-to-video",
-  kling: "fal-ai/kling-video/v2/master/image-to-video",
-  wan: "fal-ai/kling-video/v2/master/image-to-video",
-  motion: "fal-ai/kling-video/v2/master/image-to-video",
-};
-
-const IMAGE_GEN = "fal-ai/nano-banana-pro";
 
 export async function POST(request: Request) {
   try {
+    if (!FAL_KEY) {
+      return NextResponse.json({ error: "AI service not configured. Set FAL_KEY." }, { status: 503 });
+    }
+
     const cookieStore = await cookies();
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -43,18 +72,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Not logged in." }, { status: 401 });
     }
 
-    if (!FAL_KEY) {
-      return NextResponse.json({ error: "AI service not configured. Set FAL_KEY." }, { status: 503 });
-    }
-
-    const { prompt, model, aspect_ratio, image_url } = await request.json();
+    const { prompt, model, aspect_ratio, image_url, video_url, character_orientation } = await request.json();
     if (!prompt?.trim()) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
+
+    const modelConfig = MODELS[model];
+    if (!modelConfig) {
+      return NextResponse.json({ error: `Unknown model: ${model}` }, { status: 400 });
+    }
+
+    // Motion Control needs image_url + video_url
     if (model === "motion" && !image_url) {
       return NextResponse.json({ error: "Motion Control requires a reference image." }, { status: 400 });
     }
 
+    // Credits check
     let { data: profile, error: profileError } = await supabase
       .from("profiles").select("credits").eq("id", user.id).single();
 
@@ -68,26 +101,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: `Not enough credits. Need ${CREDIT_COST}, have ${currentCredits}.` }, { status: 402 });
     }
 
-    const isNano = model === "nano";
-    const useImage = !!image_url;
-
+    // Build fal.ai request
     let endpointId: string;
     const input: Record<string, unknown> = { prompt };
 
-    if (isNano) {
-      endpointId = IMAGE_GEN;
+    if (model === "motion") {
+      // Motion Control: image + video + orientation
+      endpointId = modelConfig.motion!;
+      input.image_url = image_url;
+      if (video_url) input.video_url = video_url;
+      input.character_orientation = character_orientation || "video";
+    } else if (model === "nano") {
+      // Nano Banana: image generation
+      endpointId = modelConfig.text;
       input.num_images = 1;
       input.resolution = "1K";
-    } else {
-      endpointId = useImage
-        ? (IMAGE_TO_VIDEO[model] || IMAGE_TO_VIDEO.kling)
-        : (TEXT_TO_VIDEO[model] || TEXT_TO_VIDEO.kling);
+    } else if (image_url) {
+      // Image-to-video for other models
+      endpointId = modelConfig.image || modelConfig.text;
+      input[modelConfig.inputKey || "image_url"] = image_url;
       input.duration = "5";
       input.aspect_ratio = aspect_ratio || "9:16";
-      if (useImage) input.start_image_url = image_url;
+    } else {
+      // Text-to-video
+      endpointId = modelConfig.text;
+      input.duration = model === "veo3" ? "8s" : "5";
+      input.aspect_ratio = aspect_ratio || "9:16";
     }
 
-    // Submit to queue (non-blocking)
+    // Submit to fal queue
     const queueRes = await fetch(`https://queue.fal.run/${endpointId}`, {
       method: "POST",
       headers: {
@@ -113,7 +155,7 @@ export async function POST(request: Request) {
       response_url: queueData.response_url,
       user_id: user.id,
       credits: currentCredits,
-      output_type: isNano ? "image" : "video",
+      output_type: modelConfig.type,
     });
   } catch (err) {
     console.error("Generate error:", err);

@@ -134,7 +134,14 @@ export default function GeneratePage() {
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, model: selectedModel, aspect_ratio: ratio, image_url: imageUrl }),
+        body: JSON.stringify({
+          prompt,
+          model: selectedModel,
+          aspect_ratio: ratio,
+          image_url: imageUrl,
+          video_url: videoRefUrl,
+          character_orientation: motionOrientation,
+        }),
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Generation failed"); setState("error"); return; }
