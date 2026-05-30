@@ -48,11 +48,14 @@ export default function GeneratePage() {
 
   useEffect(() => { fetchCredits(); }, [fetchCredits]);
 
+  const [uploadStatus, setUploadStatus] = useState<string>("");
+
   async function handleUpload(file: File, type: "image" | "video") {
     const maxSize = type === "image" ? 5 * 1024 * 1024 : 100 * 1024 * 1024;
     if (file.size > maxSize) { setError(`File too large (max ${type === "image" ? "5MB" : "100MB"})`); return; }
     setUploading(true);
     setError("");
+    setUploadStatus("Uploading...");
 
     if (type === "image") {
       setImagePreview(URL.createObjectURL(file));
@@ -68,20 +71,27 @@ export default function GeneratePage() {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Upload failed");
-        if (type === "image") setImagePreview(null);
+        setUploadStatus("");
+        if (type === "image") { setImagePreview(null); setImageUrl(null); }
         else setVideoRefName(null);
       } else {
-        if (type === "image") setImageUrl(data.url);
-        else setVideoRefUrl(data.url);
+        if (type === "image") {
+          setImageUrl(data.url);
+          setUploadStatus("✓ Image ready — will be used as reference");
+        } else {
+          setVideoRefUrl(data.url);
+          setUploadStatus("✓ Video uploaded");
+        }
       }
     } catch {
       setError("Upload failed");
+      setUploadStatus("");
     }
     setUploading(false);
   }
 
-  function removeImage() { setImageUrl(null); setImagePreview(null); if (fileRef.current) fileRef.current.value = ""; }
-  function removeVideo() { setVideoRefUrl(null); setVideoRefName(null); if (videoRef.current) videoRef.current.value = ""; }
+  function removeImage() { setImageUrl(null); setImagePreview(null); setUploadStatus(""); if (fileRef.current) fileRef.current.value = ""; }
+  function removeVideo() { setVideoRefUrl(null); setVideoRefName(null); setUploadStatus(""); if (videoRef.current) videoRef.current.value = ""; }
 
   async function pollForResult(responseUrl: string, userId: string) {
     const maxAttempts = 60;
@@ -215,6 +225,9 @@ export default function GeneratePage() {
               </button>
             </div>
           </div>
+        )}
+        {uploadStatus && (
+          <div className="mb-3 text-center text-xs text-[#c8f135]">{uploadStatus}</div>
         )}
         {error && (
           <div className="mb-4 p-3 rounded-xl bg-red-500/5 border border-red-500/10 text-red-400 text-xs text-center max-w-md mx-auto">{error}</div>
@@ -402,7 +415,7 @@ export default function GeneratePage() {
             disabled={!prompt.trim() || state === "generating" || (isMotion && !imageUrl)}
             className="px-10 py-3 rounded-full font-bold text-sm transition disabled:opacity-20 disabled:cursor-not-allowed bg-[#b8f53d] text-black hover:bg-[#a5dd30]"
           >
-            {state === "generating" ? "Generating..." : "Generate ✦"}
+            {state === "generating" ? "Generating..." : imageUrl && !isMotion ? `Generate with reference ✦` : "Generate ✦"}
           </button>
         </div>
 

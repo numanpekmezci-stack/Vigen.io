@@ -129,6 +129,8 @@ export async function POST(request: Request) {
       input.aspect_ratio = aspect_ratio || "9:16";
     }
 
+    console.log(`[generate] Model: ${model}, Endpoint: ${endpointId}, Has image: ${!!image_url}, Input:`, JSON.stringify(input));
+
     // Submit to fal queue
     const queueRes = await fetch(`https://queue.fal.run/${endpointId}`, {
       method: "POST",
@@ -140,6 +142,7 @@ export async function POST(request: Request) {
     });
 
     const queueData = await queueRes.json();
+    console.log(`[generate] fal response (${queueRes.status}):`, JSON.stringify(queueData).slice(0, 200));
 
     if (!queueRes.ok) {
       const msg = queueData?.detail || queueData?.message || "Failed to start generation";
